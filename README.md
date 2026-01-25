@@ -41,7 +41,7 @@ fortune-cookie.tokyo専用のUTMパラメータとクーポンコードを含む
 
 **出力:**
 ```
-https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=organic&code=FC39X&v=20260123_LILLIESCLEFAIRYexCompetition
+https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=organic&utm_campaign=20260123_LILLIESCLEFAIRYexCompetition&code=FC39X
 ```
 
 **例2: TOPページの場合**
@@ -56,7 +56,7 @@ https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=organic&c
 
 **出力:**
 ```
-https://fortune-cookie.tokyo/?utm_source=google&utm_medium=cpc&code=NY2026&v=20260123_NewYearCampaign
+https://fortune-cookie.tokyo/?utm_source=google&utm_medium=cpc&utm_campaign=20260123_NewYearCampaign&code=NY2026
 ```
 
 ## スプレッドシート連携（オプション）

@@ -37,7 +37,7 @@ function doPost(e) {
     // 成功レスポンス
     return ContentService
       .createTextOutput(JSON.stringify({
-        success: true,
+        success: true,りりく
         message: 'データを追加しました',
         timestamp: new Date().toISOString()
       }))
@@ -92,7 +92,7 @@ function testDoPost() {
         refPage: 'lottery/290',
         source: 'twitter',
         medium: 'organic',
-        url: 'https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=organic&code=TEST123&v=20260125_TestCampaign'
+        url: 'https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=organic&utm_campaign=20260125_TestCampaign&code=TEST123'
       })
     }
   };

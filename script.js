@@ -217,13 +217,13 @@ function generateURL(formData, translatedCampaignName) {
     url.searchParams.set('utm_source', formData.utmSource);
     url.searchParams.set('utm_medium', formData.utmMedium);
 
+    // 日付とキャンペーン名の処理（utm_campaign）
+    const date = formData.campaignDate.replace(/-/g, ''); // YYYYMMDD形式
+    const campaignParam = `${date}_${translatedCampaignName}`;
+    url.searchParams.set('utm_campaign', campaignParam);
+
     // クーポンコードの追加
     url.searchParams.set('code', formData.couponCode);
-
-    // 日付とキャンペーン名の処理
-    const date = formData.campaignDate.replace(/-/g, ''); // YYYYMMDD形式
-    const versionParam = `${date}_${translatedCampaignName}`;
-    url.searchParams.set('v', versionParam);
 
     return url.toString();
 }
