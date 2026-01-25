@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クーポンコード付きURL生成ツール</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>クーポンコード付きURL生成ツール</h1>
+            <p>fortune-cookie.tokyoのUTMパラメータとクーポンコードを含むURLを簡単に生成できます</p>
+        </header>
+
+        <main>
+            <form id="urlForm">
+                <div class="form-group">
+                    <label for="campaignDate">日付 *</label>
+                    <input
+                        type="date"
+                        id="campaignDate"
+                        name="campaignDate"
+                        required
+                    >
+                    <small>キャンペーンの日付を選択してください</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="campaignName">キャンペーン名（日本語） *</label>
+                    <input
+                        type="text"
+                        id="campaignName"
+                        name="campaignName"
+                        placeholder="リリクレフェアリー ex コンペティション"
+                        required
+                    >
+                    <small>自動的に英語翻訳されてURLに追加されます</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="couponCode">クーポンコード *</label>
+                    <input
+                        type="text"
+                        id="couponCode"
+                        name="couponCode"
+                        placeholder="FC39X"
+                        required
+                    >
+                    <small>URLに追加するクーポンコード</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="refPage">参照ページ</label>
+                    <input
+                        type="text"
+                        id="refPage"
+                        name="refPage"
+                        placeholder="lottery/290（TOPページの場合は空欄）"
+                    >
+                    <small>fortune-cookie.tokyo/の後に追加するパス（例: lottery/290）</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="utmSource">参照先 *</label>
+                        <select id="utmSource" name="utmSource" required>
+                            <option value="">選択してください</option>
+                            <option value="twitter">Twitter</option>
+                            <option value="google">Google</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="line">LINE</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="utmMedium">メディア *</label>
+                        <select id="utmMedium" name="utmMedium" required>
+                            <option value="">選択してください</option>
+                            <option value="organic">Organic</option>
+                            <option value="cpc">CPC</option>
+                            <option value="social">Social</option>
+                            <option value="email">Email</option>
+                            <option value="banner">Banner</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="generate-btn" id="generateBtn">
+                    URLを生成
+                </button>
+            </form>
+
+            <div id="result" class="result hidden">
+                <h2>生成されたURL</h2>
+                <div class="url-display">
+                    <input type="text" id="generatedUrl" readonly>
+                    <button type="button" class="copy-btn" id="copyBtn">
+                        コピー
+                    </button>
+                </div>
+                <div id="translatedCampaign" class="translated-info"></div>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>URL生成中...</p>
+            </div>
+
+            <div id="error" class="error hidden"></div>
+        </main>
+
+        <footer>
+            <details class="settings">
+                <summary>スプレッドシート連携設定</summary>
+                <div class="settings-content">
+                    <p>Google Apps ScriptのWeb App URLを設定すると、生成したURLを自動的にスプレッドシートに記録できます。</p>
+                    <div class="form-group">
+                        <label for="webAppUrl">Google Apps Script Web App URL</label>
+                        <input
+                            type="url"
+                            id="webAppUrl"
+                            placeholder="https://script.google.com/macros/s/.../exec"
+                        >
+                        <button type="button" id="saveWebAppUrl" class="save-btn">保存</button>
+                    </div>
+                    <small>設定方法は下記の「スプレッドシート連携の設定手順」を参照してください。URLはブラウザに安全に保存されます。</small>
+
+                    <details class="setup-guide">
+                        <summary>スプレッドシート連携の設定手順</summary>
+                        <ol class="setup-steps">
+                            <li>Googleスプレッドシートを新規作成</li>
+                            <li>1行目に見出しを設定：<code>日付 | キャンペーン名 | クーポンコード | 参照ページ | 参照先 | メディア | URL</code></li>
+                            <li>「拡張機能」→「Apps Script」を開く</li>
+                            <li>以下のコードを貼り付けて保存
+                                <button type="button" class="copy-code-btn" onclick="copyScriptCode()">コードをコピー</button>
+                            </li>
+                            <li>「デプロイ」→「新しいデプロイ」→「ウェブアプリ」を選択</li>
+                            <li>「次のユーザーとして実行」→「自分」、「アクセスできるユーザー」→「全員」を選択</li>
+                            <li>デプロイして、表示されたURLを上記に貼り付け</li>
+                        </ol>
+                    </details>
+                </div>
+            </details>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
