@@ -130,8 +130,8 @@ urlForm.addEventListener('submit', async (e) => {
             });
         } else {
             // スプレッドシート連携が設定されていない場合
-            spreadsheetStatus.textContent = 'ℹ️ スプレッドシート連携が設定されていません';
-            spreadsheetStatus.className = 'spreadsheet-status warning';
+            spreadsheetStatus.textContent = 'スプレットシートの書き込みに失敗しました。Google Apps Script Web App URLを確認してください。';
+            spreadsheetStatus.className = 'spreadsheet-status error';
         }
 
     } catch (err) {

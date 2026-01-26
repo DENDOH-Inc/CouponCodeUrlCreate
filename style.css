@@ -223,6 +223,45 @@ main {
     box-shadow: var(--shadow-lg);
 }
 
+.spreadsheet-link-permanent {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--surface);
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.spreadsheet-link-permanent a {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--success-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all 0.2s;
+}
+
+.spreadsheet-link-permanent a:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.inline-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: normal;
+    margin-left: 8px;
+}
+
+.inline-link:hover {
+    text-decoration: underline;
+}
+
 .spreadsheet-status {
     margin-top: 12px;
     padding: 8px 12px;
