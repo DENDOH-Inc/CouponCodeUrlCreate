@@ -198,6 +198,31 @@ main {
     color: var(--text-secondary);
 }
 
+.spreadsheet-link {
+    margin-top: 16px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.spreadsheet-link a {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--success-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.spreadsheet-link a:hover {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
 .loading {
     text-align: center;
     padding: 40px;
@@ -240,18 +265,15 @@ footer {
 }
 
 .settings {
-    cursor: pointer;
+    /* プルダウンではなく常に表示 */
 }
 
-.settings summary {
+.settings-title {
+    font-size: 1.25rem;
     font-weight: 600;
     padding: 12px;
-    user-select: none;
-    list-style-position: inside;
-}
-
-.settings summary:hover {
-    color: var(--primary-color);
+    margin-bottom: 8px;
+    color: var(--text-primary);
 }
 
 .settings-content {
