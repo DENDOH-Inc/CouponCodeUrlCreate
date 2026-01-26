@@ -7,6 +7,7 @@ const error = document.getElementById('error');
 const generatedUrl = document.getElementById('generatedUrl');
 const copyBtn = document.getElementById('copyBtn');
 const translatedCampaign = document.getElementById('translatedCampaign');
+const spreadsheetStatus = document.getElementById('spreadsheetStatus');
 const webAppUrlInput = document.getElementById('webAppUrl');
 const saveWebAppUrlBtn = document.getElementById('saveWebAppUrl');
 
@@ -127,6 +128,10 @@ urlForm.addEventListener('submit', async (e) => {
                 medium: formData.utmMedium,
                 url: url
             });
+        } else {
+            // スプレッドシート連携が設定されていない場合
+            spreadsheetStatus.textContent = 'ℹ️ スプレッドシート連携が設定されていません';
+            spreadsheetStatus.className = 'spreadsheet-status warning';
         }
 
     } catch (err) {
@@ -230,6 +235,10 @@ function generateURL(formData, translatedCampaignName) {
 
 // スプレッドシートに送信
 async function sendToSpreadsheet(data) {
+    // ステータスエリアをクリア
+    spreadsheetStatus.textContent = '';
+    spreadsheetStatus.className = 'spreadsheet-status';
+
     try {
         console.log('スプレッドシートに送信中...', data);
 
@@ -247,15 +256,26 @@ async function sendToSpreadsheet(data) {
         if (response.ok) {
             const result = await response.text();
             console.log('スプレッドシートに送信成功:', result);
+
+            // 成功ステータスを表示
+            spreadsheetStatus.textContent = '✅ スプレッドシートに記録しました';
+            spreadsheetStatus.classList.add('success');
             showMessage('スプレッドシートに記録しました', 'success');
         } else {
             console.warn('スプレッドシートへの送信が失敗しました:', response.status);
+
+            // 失敗ステータスを表示
+            spreadsheetStatus.textContent = '❌ スプレッドシートへの記録に失敗しました';
+            spreadsheetStatus.classList.add('error');
             showMessage('スプレッドシートへの記録に失敗しました', 'error');
         }
 
     } catch (err) {
         console.error('スプレッドシートへの送信エラー:', err);
-        // エラーがあっても続行（URL生成は成功しているため）
+
+        // エラーステータスを表示
+        spreadsheetStatus.textContent = '⚠️ スプレッドシートへの送信エラー';
+        spreadsheetStatus.classList.add('warning');
         showMessage('スプレッドシートへの送信エラー（URL生成は成功）', 'warning');
     }
 }
