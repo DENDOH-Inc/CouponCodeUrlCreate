@@ -227,8 +227,10 @@ function generateURL(formData, translatedCampaignName) {
     const campaignParam = `${date}_${translatedCampaignName}`;
     url.searchParams.set('utm_campaign', campaignParam);
 
-    // クーポンコードの追加
-    url.searchParams.set('code', formData.couponCode);
+    // クーポンコードの追加（入力されている場合のみ）
+    if (formData.couponCode) {
+        url.searchParams.set('code', formData.couponCode);
+    }
 
     return url.toString();
 }
