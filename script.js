@@ -46,6 +46,7 @@ function copyScriptCode() {
     sheet.appendRow([
       data.date,
       data.campaignName,
+      data.utmCampaign || '',
       data.couponCode,
       data.refPage || '',
       data.source,
@@ -110,9 +111,14 @@ urlForm.addEventListener('submit', async (e) => {
         // URLを生成
         const url = generateURL(formData, translatedName);
 
+        // utm_campaignの値を生成
+        const date = formData.campaignDate.replace(/-/g, '');
+        const utmCampaignValue = `${date}_${translatedName}`;
+
         // 結果を表示
         generatedUrl.value = url;
         translatedCampaign.innerHTML = `
+            <strong>utm_campaign:</strong> ${utmCampaignValue}<br>
             <strong>翻訳されたキャンペーン名:</strong> ${translatedName}
         `;
         result.classList.remove('hidden');
@@ -122,6 +128,7 @@ urlForm.addEventListener('submit', async (e) => {
             await sendToSpreadsheet({
                 date: formData.campaignDate,
                 campaignName: formData.campaignName,
+                utmCampaign: utmCampaignValue,
                 couponCode: formData.couponCode,
                 refPage: formData.refPage,
                 source: formData.utmSource,

@@ -3,7 +3,7 @@
  *
  * 設定手順:
  * 1. Googleスプレッドシートを新規作成
- * 2. 1行目に見出しを設定: 日付 | キャンペーン名 | クーポンコード | 参照先 | メディア | URL
+ * 2. 1行目に見出しを設定: 日付 | キャンペーン名 | utm_campaign | クーポンコード | 参照ページ | 参照先 | メディア | URL
  * 3. 「拡張機能」→「Apps Script」を開く
  * 4. このコードを貼り付けて保存
  * 5. 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」を選択
@@ -24,7 +24,9 @@ function doPost(e) {
     sheet.appendRow([
       data.date,           // 日付
       data.campaignName,   // キャンペーン名
+      data.utmCampaign || '', // utm_campaign
       data.couponCode,     // クーポンコード
+      data.refPage || '',  // 参照ページ
       data.source,         // 参照先
       data.medium,         // メディア
       data.url             // URL
@@ -72,10 +74,12 @@ function testDoPost() {
       contents: JSON.stringify({
         date: '2026-01-25',
         campaignName: 'テストキャンペーン',
+        utmCampaign: '20260125_TestCampaign',
         couponCode: 'TEST123',
+        refPage: 'lottery/290',
         source: 'twitter',
         medium: 'organic',
-        url: 'https://fortune-cookie.tokyo/?utm_source=twitter&utm_medium=organic&code=TEST123&v=20260125_TestCampaign'
+        url: 'https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=organic&utm_campaign=20260125_TestCampaign&code=TEST123'
       })
     }
   };
