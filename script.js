@@ -87,8 +87,10 @@ urlForm.addEventListener('submit', async (e) => {
 
     // フォームデータの取得
     const refPageInput = document.getElementById('refPage').value.trim();
-    // 先頭の / を削除
-    const refPage = refPageInput.replace(/^\/+/, '');
+    // ベースURLが含まれている場合は除去し、先頭の / を削除
+    const refPage = refPageInput
+        .replace(/^https?:\/\/fortune-cookie\.tokyo\/?/, '')
+        .replace(/^\/+/, '');
 
     const formData = {
         baseUrl: 'https://fortune-cookie.tokyo/',
