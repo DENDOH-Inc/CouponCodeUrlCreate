@@ -310,12 +310,12 @@ async function translateToInitials(text) {
                 .map(w => w.match(/[a-zA-Z0-9]/)[0])
                 .join('')
                 .toLowerCase();
-            // 必ず2文字にする: 1単語なら先頭2文字、0文字ならフォールバック
+            // 1単語のみの場合は先頭2文字にする
             if (initials.length === 1 && words.length > 0) {
                 const first = words[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                 initials = first.substring(0, 2);
             }
-            if (initials.length >= 2) {
+            if (initials.length >= 1) {
                 return initials.substring(0, initials.length);
             }
             return sanitizeForURL(translated);
