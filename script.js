@@ -413,8 +413,10 @@ async function translateToInitials(text) {
 function sanitizeForURL(text) {
     return text
         .replace(/[^a-zA-Z0-9\-_\s]/g, '')
-        .replace(/\s+/g, '_')
-        .replace(/^[-_]+|[-_]+$/g, '')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')  // camelCase分割
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')  // ABCDef → ABC Def
+        .replace(/[\s_-]+/g, '_')
+        .replace(/^_+|_+$/g, '')
         .toLowerCase();
 }
 
