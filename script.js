@@ -302,15 +302,23 @@ async function translateToInitials(text) {
         const data = await response.json();
         if (data.responseStatus === 200 && data.responseData) {
             const translated = data.responseData.translatedText;
-            // スペース区切りで各単語の頭文字を取得
-            const initials = translated
-                .replace(/[^a-zA-Z\s]/g, '')
+            // スペース区切りで各単語の頭文字を取得（数字も頭文字としてカウント）
+            const words = translated
                 .split(/\s+/)
-                .filter(w => w.length > 0)
-                .map(w => w[0])
+                .filter(w => /[a-zA-Z0-9]/.test(w));
+            let initials = words
+                .map(w => w.match(/[a-zA-Z0-9]/)[0])
                 .join('')
                 .toLowerCase();
-            return initials || sanitizeForURL(translated);
+            // 必ず2文字にする: 1単語なら先頭2文字、0文字ならフォールバック
+            if (initials.length === 1 && words.length > 0) {
+                const first = words[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                initials = first.substring(0, 2);
+            }
+            if (initials.length >= 2) {
+                return initials.substring(0, initials.length);
+            }
+            return sanitizeForURL(translated);
         }
         throw new Error('翻訳結果の取得に失敗しました');
     } catch (err) {
