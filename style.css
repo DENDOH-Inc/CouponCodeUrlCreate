@@ -493,3 +493,14 @@ footer {
     border-left: 3px solid #10b981;
     padding-left: 8px;
 }
+
+.utm-output {
+    padding: 12px 16px;
+    background: #f1f5f9;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: 'Courier New', monospace;
+    color: var(--text-secondary);
+    min-height: 20px;
+}

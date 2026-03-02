@@ -12,43 +12,33 @@ const managementIdDisplay = document.getElementById('managementIdDisplay');
 const webAppUrlInput = document.getElementById('webAppUrl');
 const saveWebAppUrlBtn = document.getElementById('saveWebAppUrl');
 
-// 翻訳ペアの入力フィールド
+// 翻訳ペアのフィールド
 const campaignGroupJaInput = document.getElementById('campaignGroupJa');
-const utmCampaignInput = document.getElementById('utmCampaign');
+const utmCampaignDisplay = document.getElementById('utmCampaign');
 const targetSegmentJaInput = document.getElementById('targetSegmentJa');
-const utmTermInput = document.getElementById('utmTerm');
+const utmTermDisplay = document.getElementById('utmTerm');
 const creativeNameJaInput = document.getElementById('creativeNameJa');
-const utmContentInput = document.getElementById('utmContent');
+const utmContentDisplay = document.getElementById('utmContent');
 
-// 手動編集追跡用Set
-const manuallyEdited = new Set();
-
-// UTMフィールドの手動入力追跡
-[utmCampaignInput, utmTermInput, utmContentInput].forEach(input => {
-    input.addEventListener('input', () => {
-        manuallyEdited.add(input.id);
-    });
-});
-
-// 日本語フィールドのblurイベントで自動翻訳
+// 日本語フィールドのblurイベントで自動翻訳 → 表示を更新
 campaignGroupJaInput.addEventListener('blur', async () => {
-    if (!manuallyEdited.has('utmCampaign') && campaignGroupJaInput.value.trim()) {
+    if (campaignGroupJaInput.value.trim()) {
         const translated = await translateWithMyMemory(campaignGroupJaInput.value.trim());
-        utmCampaignInput.value = translated;
+        utmCampaignDisplay.textContent = translated;
     }
 });
 
 targetSegmentJaInput.addEventListener('blur', async () => {
-    if (!manuallyEdited.has('utmTerm') && targetSegmentJaInput.value.trim()) {
+    if (targetSegmentJaInput.value.trim()) {
         const translated = await translateWithMyMemory(targetSegmentJaInput.value.trim());
-        utmTermInput.value = translated;
+        utmTermDisplay.textContent = translated;
     }
 });
 
 creativeNameJaInput.addEventListener('blur', async () => {
-    if (!manuallyEdited.has('utmContent') && creativeNameJaInput.value.trim()) {
+    if (creativeNameJaInput.value.trim()) {
         const translated = await translateWithMyMemory(creativeNameJaInput.value.trim());
-        utmContentInput.value = translated;
+        utmContentDisplay.textContent = translated;
     }
 });
 
@@ -161,29 +151,32 @@ urlForm.addEventListener('submit', async (e) => {
 
     const campaignDate = document.getElementById('campaignDate').value;
 
-    // 翻訳値の取得（blur時に自動入力済み or 手動入力済み）
-    // 未入力ならblur翻訳をトリガー
-    let utmCampaignVal = utmCampaignInput.value.trim();
-    let utmTermVal = utmTermInput.value.trim();
-    let utmContentVal = utmContentInput.value.trim();
+    // 翻訳値の取得（blur時に自動表示済み）
+    let utmCampaignVal = utmCampaignDisplay.textContent.trim();
+    let utmTermVal = utmTermDisplay.textContent.trim();
+    let utmContentVal = utmContentDisplay.textContent.trim();
+    // プレースホルダーテキストをクリア
+    if (utmCampaignVal === '自動翻訳されます') utmCampaignVal = '';
+    if (utmTermVal === '自動翻訳されます') utmTermVal = '';
+    if (utmContentVal === '自動翻訳されます') utmContentVal = '';
 
     // ローディング表示
     loading.classList.remove('hidden');
     generateBtn.disabled = true;
 
     try {
-        // UTMフィールドが空なら翻訳を実行
+        // 翻訳値が未取得なら翻訳を実行
         if (!utmCampaignVal && campaignGroupJaInput.value.trim()) {
             utmCampaignVal = await translateWithMyMemory(campaignGroupJaInput.value.trim());
-            utmCampaignInput.value = utmCampaignVal;
+            utmCampaignDisplay.textContent = utmCampaignVal;
         }
         if (!utmTermVal && targetSegmentJaInput.value.trim()) {
             utmTermVal = await translateWithMyMemory(targetSegmentJaInput.value.trim());
-            utmTermInput.value = utmTermVal;
+            utmTermDisplay.textContent = utmTermVal;
         }
         if (!utmContentVal && creativeNameJaInput.value.trim()) {
             utmContentVal = await translateWithMyMemory(creativeNameJaInput.value.trim());
-            utmContentInput.value = utmContentVal;
+            utmContentDisplay.textContent = utmContentVal;
         }
 
         const formData = {
