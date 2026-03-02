@@ -6,10 +6,51 @@ const loading = document.getElementById('loading');
 const error = document.getElementById('error');
 const generatedUrl = document.getElementById('generatedUrl');
 const copyBtn = document.getElementById('copyBtn');
-const translatedCampaign = document.getElementById('translatedCampaign');
+const utmDetails = document.getElementById('utmDetails');
 const spreadsheetStatus = document.getElementById('spreadsheetStatus');
+const managementIdDisplay = document.getElementById('managementIdDisplay');
 const webAppUrlInput = document.getElementById('webAppUrl');
 const saveWebAppUrlBtn = document.getElementById('saveWebAppUrl');
+
+// 翻訳ペアの入力フィールド
+const campaignGroupJaInput = document.getElementById('campaignGroupJa');
+const utmCampaignInput = document.getElementById('utmCampaign');
+const targetSegmentJaInput = document.getElementById('targetSegmentJa');
+const utmTermInput = document.getElementById('utmTerm');
+const creativeNameJaInput = document.getElementById('creativeNameJa');
+const utmContentInput = document.getElementById('utmContent');
+
+// 手動編集追跡用Set
+const manuallyEdited = new Set();
+
+// UTMフィールドの手動入力追跡
+[utmCampaignInput, utmTermInput, utmContentInput].forEach(input => {
+    input.addEventListener('input', () => {
+        manuallyEdited.add(input.id);
+    });
+});
+
+// 日本語フィールドのblurイベントで自動翻訳
+campaignGroupJaInput.addEventListener('blur', async () => {
+    if (!manuallyEdited.has('utmCampaign') && campaignGroupJaInput.value.trim()) {
+        const translated = await translateWithMyMemory(campaignGroupJaInput.value.trim());
+        utmCampaignInput.value = translated;
+    }
+});
+
+targetSegmentJaInput.addEventListener('blur', async () => {
+    if (!manuallyEdited.has('utmTerm') && targetSegmentJaInput.value.trim()) {
+        const translated = await translateWithMyMemory(targetSegmentJaInput.value.trim());
+        utmTermInput.value = translated;
+    }
+});
+
+creativeNameJaInput.addEventListener('blur', async () => {
+    if (!manuallyEdited.has('utmContent') && creativeNameJaInput.value.trim()) {
+        const translated = await translateWithMyMemory(creativeNameJaInput.value.trim());
+        utmContentInput.value = translated;
+    }
+});
 
 // LocalStorageからWeb App URLを読み込む
 const STORAGE_KEY = 'google_apps_script_web_app_url';
@@ -37,32 +78,58 @@ saveWebAppUrlBtn.addEventListener('click', () => {
 
 // Apps Scriptコードをコピー
 function copyScriptCode() {
-    const code = `function doPost(e) {
+    const code = `function generateManagementId(sheet) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    const data = JSON.parse(e.postData.contents);
+    var now = new Date();
+    var yy = String(now.getFullYear()).slice(-2);
+    var mm = String(now.getMonth() + 1).padStart(2, '0');
+    var prefix = 'XAD-' + yy + mm + '-';
+    var lastRow = sheet.getLastRow();
+    var maxSeq = 0;
+    if (lastRow >= 2) {
+      var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (var i = 0; i < ids.length; i++) {
+        var id = String(ids[i][0]);
+        if (id.indexOf(prefix) === 0) {
+          var seq = parseInt(id.substring(prefix.length), 10);
+          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        }
+      }
+    }
+    return prefix + String(maxSeq + 1).padStart(3, '0');
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-    // データを追加
+function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var data = JSON.parse(e.postData.contents);
+    var managementId = generateManagementId(sheet);
+    var finalUrl = data.urlWithoutId;
+    if (finalUrl.indexOf('?') !== -1) {
+      finalUrl = finalUrl + '&utm_id=' + encodeURIComponent(managementId);
+    } else {
+      finalUrl = finalUrl + '?utm_id=' + encodeURIComponent(managementId);
+    }
     sheet.appendRow([
-      data.date,
-      data.campaignName,
-      data.utmCampaign || '',
-      data.couponCode,
-      data.refPage || '',
-      data.source,
-      data.medium,
-      data.url
+      managementId, data.date,
+      data.campaignGroupJa, data.utmCampaign,
+      data.targetSegmentJa, data.utmTerm,
+      data.creativeNameJa, data.utmContent,
+      data.couponCode, data.refPage || '',
+      data.source, data.medium, finalUrl
     ]);
-
     return ContentService.createTextOutput(JSON.stringify({
-      success: true,
-      message: 'データを追加しました'
+      success: true, message: 'データを追加しました',
+      managementId: managementId, url: finalUrl
     })).setMimeType(ContentService.MimeType.JSON);
-
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({
-      success: false,
-      message: error.toString()
+      success: false, message: error.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }`;
@@ -84,63 +151,97 @@ urlForm.addEventListener('submit', async (e) => {
     // エラー表示をクリア
     hideError();
     result.classList.add('hidden');
+    managementIdDisplay.classList.add('hidden');
 
     // フォームデータの取得
     const refPageInput = document.getElementById('refPage').value.trim();
-    // ベースURLが含まれている場合は除去し、先頭の / を削除
     const refPage = refPageInput
         .replace(/^(https?:\/\/)?fortune-cookie\.tokyo\/?/, '')
         .replace(/^\/+/, '');
 
-    const formData = {
-        baseUrl: 'https://fortune-cookie.tokyo/',
-        utmSource: document.getElementById('utmSource').value,
-        utmMedium: document.getElementById('utmMedium').value,
-        couponCode: document.getElementById('couponCode').value.trim(),
-        refPage: refPage,
-        campaignDate: document.getElementById('campaignDate').value,
-        campaignName: document.getElementById('campaignName').value.trim()
-    };
+    const campaignDate = document.getElementById('campaignDate').value;
+
+    // 翻訳値の取得（blur時に自動入力済み or 手動入力済み）
+    // 未入力ならblur翻訳をトリガー
+    let utmCampaignVal = utmCampaignInput.value.trim();
+    let utmTermVal = utmTermInput.value.trim();
+    let utmContentVal = utmContentInput.value.trim();
 
     // ローディング表示
     loading.classList.remove('hidden');
     generateBtn.disabled = true;
 
     try {
-        // キャンペーン名を翻訳
-        const translatedName = await translateToEnglish(formData.campaignName);
+        // UTMフィールドが空なら翻訳を実行
+        if (!utmCampaignVal && campaignGroupJaInput.value.trim()) {
+            utmCampaignVal = await translateWithMyMemory(campaignGroupJaInput.value.trim());
+            utmCampaignInput.value = utmCampaignVal;
+        }
+        if (!utmTermVal && targetSegmentJaInput.value.trim()) {
+            utmTermVal = await translateWithMyMemory(targetSegmentJaInput.value.trim());
+            utmTermInput.value = utmTermVal;
+        }
+        if (!utmContentVal && creativeNameJaInput.value.trim()) {
+            utmContentVal = await translateWithMyMemory(creativeNameJaInput.value.trim());
+            utmContentInput.value = utmContentVal;
+        }
 
-        // URLを生成
-        const url = generateURL(formData, translatedName);
+        const formData = {
+            baseUrl: 'https://fortune-cookie.tokyo/',
+            utmSource: document.getElementById('utmSource').value,
+            utmMedium: document.getElementById('utmMedium').value,
+            couponCode: document.getElementById('couponCode').value.trim(),
+            refPage: refPage,
+            campaignDate: campaignDate,
+            utmCampaign: utmCampaignVal,
+            utmTerm: utmTermVal,
+            utmContent: utmContentVal
+        };
 
-        // utm_campaignの値を生成
-        const date = formData.campaignDate.replace(/-/g, '');
-        const utmCampaignValue = `${date}_${translatedName}`;
+        // Phase 1: クライアント側で暫定URL生成（utm_idなし）
+        const urlWithoutId = generateURL(formData);
 
-        // 結果を表示
-        generatedUrl.value = url;
-        translatedCampaign.innerHTML = `
-            <strong>utm_campaign:</strong> ${utmCampaignValue}<br>
-            <strong>翻訳されたキャンペーン名:</strong> ${translatedName}
+        // utm_campaignの完全値を計算
+        const yyyymm = formData.campaignDate.replace(/-/g, '').substring(0, 6);
+        const fullUtmCampaign = `${yyyymm}_${formData.utmCampaign}`;
+
+        // 結果を表示（暫定）
+        generatedUrl.value = urlWithoutId;
+        utmDetails.innerHTML = `
+            <strong>utm_campaign:</strong> ${fullUtmCampaign}<br>
+            <strong>utm_term:</strong> ${formData.utmTerm || '(未設定)'}<br>
+            <strong>utm_content:</strong> ${formData.utmContent || '(未設定)'}
         `;
         result.classList.remove('hidden');
 
-        // スプレッドシートに送信
+        // Phase 2: GASに送信
         if (webAppUrl) {
-            await sendToSpreadsheet({
+            const gasResult = await sendToSpreadsheet({
                 date: formData.campaignDate,
-                campaignName: formData.campaignName,
-                utmCampaign: utmCampaignValue,
+                campaignGroupJa: campaignGroupJaInput.value.trim(),
+                utmCampaign: fullUtmCampaign,
+                targetSegmentJa: targetSegmentJaInput.value.trim(),
+                utmTerm: formData.utmTerm,
+                creativeNameJa: creativeNameJaInput.value.trim(),
+                utmContent: formData.utmContent,
                 couponCode: formData.couponCode,
                 refPage: formData.refPage,
                 source: formData.utmSource,
                 medium: formData.utmMedium,
-                url: url
+                urlWithoutId: urlWithoutId
             });
+
+            // GASからの結果で表示を更新
+            if (gasResult && gasResult.managementId) {
+                managementIdDisplay.textContent = `管理ID: ${gasResult.managementId}`;
+                managementIdDisplay.classList.remove('hidden');
+            }
+            if (gasResult && gasResult.url) {
+                generatedUrl.value = gasResult.url;
+            }
         } else {
-            // スプレッドシート連携が設定されていない場合
-            spreadsheetStatus.textContent = 'スプレットシートの書き込みに失敗しました。Google Apps Script Web App URLを確認してください。';
-            spreadsheetStatus.className = 'spreadsheet-status error';
+            spreadsheetStatus.textContent = '⚠️ GAS未設定のため、utm_idなしのURLです。スプレッドシート連携を設定すると管理IDが自動採番されます。';
+            spreadsheetStatus.className = 'spreadsheet-status warning';
         }
 
     } catch (err) {
@@ -164,17 +265,11 @@ copyBtn.addEventListener('click', async () => {
             copyBtn.classList.remove('copied');
         }, 2000);
     } catch (err) {
-        // フォールバック: input要素を選択してコピー
         generatedUrl.select();
         document.execCommand('copy');
         showMessage('URLをコピーしました', 'success');
     }
 });
-
-// 英語翻訳関数
-async function translateToEnglish(text) {
-    return await translateWithMyMemory(text);
-}
 
 // MyMemory Translation APIを使用した翻訳（無料、CORS対応）
 async function translateWithMyMemory(text) {
@@ -198,7 +293,6 @@ async function translateWithMyMemory(text) {
         }
     } catch (err) {
         console.warn('翻訳APIエラー、日本語のままURLに使用します:', err);
-        // エラー時は日本語をそのままサニタイズ（ローマ字として扱う）
         return sanitizeForURL(text);
     }
 }
@@ -206,37 +300,40 @@ async function translateWithMyMemory(text) {
 // URLに適した形式に変換
 function sanitizeForURL(text) {
     return text
-        // 英数字、ハイフン、アンダースコアのみを残す
         .replace(/[^a-zA-Z0-9\-_\s]/g, '')
-        // スペースを削除
         .replace(/\s+/g, '')
-        // 先頭・末尾のハイフンやアンダースコアを削除
         .replace(/^[-_]+|[-_]+$/g, '');
 }
 
-// URL生成関数
-function generateURL(formData, translatedCampaignName) {
-    // ベースURLの処理
+// URL生成関数（utm_idなし）
+function generateURL(formData) {
     let baseUrl = formData.baseUrl;
 
-    // 参照ページがある場合は追加
     if (formData.refPage) {
-        // 末尾の / を削除してから、refPage を追加
         baseUrl = baseUrl.replace(/\/$/, '') + '/' + formData.refPage;
     }
 
     let url = new URL(baseUrl);
 
-    // UTMパラメータの追加
     url.searchParams.set('utm_source', formData.utmSource);
     url.searchParams.set('utm_medium', formData.utmMedium);
 
-    // 日付とキャンペーン名の処理（utm_campaign）
-    const date = formData.campaignDate.replace(/-/g, ''); // YYYYMMDD形式
-    const campaignParam = `${date}_${translatedCampaignName}`;
+    // utm_campaign: YYYYMM_ + 翻訳値
+    const yyyymm = formData.campaignDate.replace(/-/g, '').substring(0, 6);
+    const campaignParam = `${yyyymm}_${formData.utmCampaign}`;
     url.searchParams.set('utm_campaign', campaignParam);
 
-    // クーポンコードの追加（入力されている場合のみ）
+    // utm_term
+    if (formData.utmTerm) {
+        url.searchParams.set('utm_term', formData.utmTerm);
+    }
+
+    // utm_content
+    if (formData.utmContent) {
+        url.searchParams.set('utm_content', formData.utmContent);
+    }
+
+    // クーポンコード
     if (formData.couponCode) {
         url.searchParams.set('code', formData.couponCode);
     }
@@ -244,9 +341,8 @@ function generateURL(formData, translatedCampaignName) {
     return url.toString();
 }
 
-// スプレッドシートに送信
+// スプレッドシートに送信（レスポンスからmanagementIdとurlを返却）
 async function sendToSpreadsheet(data) {
-    // ステータスエリアをクリア
     spreadsheetStatus.textContent = '';
     spreadsheetStatus.className = 'spreadsheet-status';
 
@@ -265,29 +361,39 @@ async function sendToSpreadsheet(data) {
         console.log('レスポンスステータス:', response.status);
 
         if (response.ok) {
-            const result = await response.text();
-            console.log('スプレッドシートに送信成功:', result);
+            const resultText = await response.text();
+            console.log('スプレッドシートに送信成功:', resultText);
 
-            // 成功ステータスを表示
-            spreadsheetStatus.textContent = '✅ スプレッドシートに記録しました';
+            let parsed = null;
+            try {
+                parsed = JSON.parse(resultText);
+            } catch (parseErr) {
+                console.warn('レスポンスのパースに失敗:', parseErr);
+            }
+
+            if (parsed && parsed.managementId) {
+                spreadsheetStatus.textContent = `✅ スプレッドシートに記録しました（管理ID: ${parsed.managementId}）`;
+            } else {
+                spreadsheetStatus.textContent = '✅ スプレッドシートに記録しました';
+            }
             spreadsheetStatus.classList.add('success');
             showMessage('スプレッドシートに記録しました', 'success');
+
+            return parsed;
         } else {
             console.warn('スプレッドシートへの送信が失敗しました:', response.status);
-
-            // 失敗ステータスを表示
             spreadsheetStatus.textContent = '❌ スプレッドシートへの記録に失敗しました';
             spreadsheetStatus.classList.add('error');
             showMessage('スプレッドシートへの記録に失敗しました', 'error');
+            return null;
         }
 
     } catch (err) {
         console.error('スプレッドシートへの送信エラー:', err);
-
-        // エラーステータスを表示
         spreadsheetStatus.textContent = '⚠️ スプレッドシートへの送信エラー';
         spreadsheetStatus.classList.add('warning');
         showMessage('スプレッドシートへの送信エラー（URL生成は成功）', 'warning');
+        return null;
     }
 }
 
@@ -311,8 +417,7 @@ function showMessage(message, type = 'info') {
     messageDiv.className = `message ${type}`;
     messageDiv.textContent = message;
 
-    // タイプごとの背景色
-    let backgroundColor = '#3b82f6'; // info
+    let backgroundColor = '#3b82f6';
     if (type === 'success') backgroundColor = '#10b981';
     if (type === 'error') backgroundColor = '#ef4444';
     if (type === 'warning') backgroundColor = '#f59e0b';
