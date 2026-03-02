@@ -29,8 +29,8 @@ campaignGroupJaInput.addEventListener('blur', async () => {
 
 targetSegmentJaInput.addEventListener('blur', async () => {
     if (targetSegmentJaInput.value.trim()) {
-        const translated = await translateWithMyMemory(targetSegmentJaInput.value.trim());
-        utmTermDisplay.textContent = translated;
+        const initials = await translateToInitials(targetSegmentJaInput.value.trim());
+        utmTermDisplay.textContent = initials;
     }
 });
 
@@ -169,7 +169,7 @@ urlForm.addEventListener('submit', async (e) => {
             utmCampaignDisplay.textContent = utmCampaignVal;
         }
         if (!utmTermVal && targetSegmentJaInput.value.trim()) {
-            utmTermVal = await translateWithMyMemory(targetSegmentJaInput.value.trim());
+            utmTermVal = await translateToInitials(targetSegmentJaInput.value.trim());
             utmTermDisplay.textContent = utmTermVal;
         }
         if (!utmContentVal && creativeNameJaInput.value.trim()) {
@@ -288,6 +288,33 @@ async function translateWithMyMemory(text) {
         }
     } catch (err) {
         console.warn('翻訳APIエラー、日本語のままURLに使用します:', err);
+        return sanitizeForURL(text);
+    }
+}
+
+// 翻訳結果から大文字の頭文字を抽出して小文字に（例: "New User" → "nu"）
+async function translateToInitials(text) {
+    try {
+        const encodedText = encodeURIComponent(text);
+        const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=ja|en`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('翻訳APIのリクエストに失敗しました');
+        const data = await response.json();
+        if (data.responseStatus === 200 && data.responseData) {
+            const translated = data.responseData.translatedText;
+            // スペース区切りで各単語の頭文字を取得
+            const initials = translated
+                .replace(/[^a-zA-Z\s]/g, '')
+                .split(/\s+/)
+                .filter(w => w.length > 0)
+                .map(w => w[0])
+                .join('')
+                .toLowerCase();
+            return initials || sanitizeForURL(translated);
+        }
+        throw new Error('翻訳結果の取得に失敗しました');
+    } catch (err) {
+        console.warn('翻訳APIエラー:', err);
         return sanitizeForURL(text);
     }
 }
