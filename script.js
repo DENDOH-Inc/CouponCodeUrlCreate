@@ -275,9 +275,7 @@ urlForm.addEventListener('submit', async (e) => {
         // Phase 1: クライアント側で暫定URL生成（utm_idなし）
         const urlWithoutId = generateURL(formData);
 
-        // utm_campaignの完全値を計算
-        const yyyymm = formData.campaignDate.replace(/-/g, '').substring(0, 6);
-        const fullUtmCampaign = `${yyyymm}_${formData.utmCampaign}`;
+        const fullUtmCampaign = formData.utmCampaign;
 
         // 結果を表示（暫定 - utm_idなし）
         generatedUrl.value = urlWithoutId;
@@ -432,10 +430,7 @@ function generateURL(formData) {
     url.searchParams.set('utm_source', formData.utmSource);
     url.searchParams.set('utm_medium', formData.utmMedium);
 
-    // utm_campaign: YYYYMM_ + 翻訳値
-    const yyyymm = formData.campaignDate.replace(/-/g, '').substring(0, 6);
-    const campaignParam = `${yyyymm}_${formData.utmCampaign}`;
-    url.searchParams.set('utm_campaign', campaignParam);
+    url.searchParams.set('utm_campaign', formData.utmCampaign);
 
     // utm_term
     if (formData.utmTerm) {
