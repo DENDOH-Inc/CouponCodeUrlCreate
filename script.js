@@ -67,14 +67,14 @@ saveWebAppUrlBtn.addEventListener('click', () => {
 
 // Apps Scriptコードをコピー
 function copyScriptCode() {
-    const code = `function generateManagementId(sheet) {
+    const code = `function generateManagementId(sheet, source, medium, dateStr) {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    var now = new Date();
-    var yy = String(now.getFullYear()).slice(-2);
-    var mm = String(now.getMonth() + 1).padStart(2, '0');
-    var prefix = 'XAD-' + yy + mm + '-';
+    var s = (source || 'X').charAt(0).toUpperCase();
+    var m = (medium || 'X').charAt(0).toUpperCase();
+    var yymmdd = dateStr.replace(/-/g, '').substring(2);
+    var prefix = s + m + '-' + yymmdd + '-';
     var lastRow = sheet.getLastRow();
     var maxSeq = 0;
     if (lastRow >= 2) {
@@ -97,7 +97,7 @@ function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var data = JSON.parse(e.postData.contents);
-    var managementId = generateManagementId(sheet);
+    var managementId = generateManagementId(sheet, data.source, data.medium, data.date);
     var finalUrl = data.urlWithoutId;
     if (finalUrl.indexOf('?') !== -1) {
       finalUrl = finalUrl + '&utm_id=' + encodeURIComponent(managementId);

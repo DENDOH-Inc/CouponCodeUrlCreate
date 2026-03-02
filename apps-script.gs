@@ -14,17 +14,18 @@
 
 /**
  * 管理ID自動生成
- * 形式: XAD-YYMM-NNN (例: XAD-2603-001)
+ * 形式: {Source頭文字}{Medium頭文字}-YYMMDD-NNN (例: TC-260301-001)
  */
-function generateManagementId(sheet) {
+function generateManagementId(sheet, source, medium, dateStr) {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
 
   try {
-    var now = new Date();
-    var yy = String(now.getFullYear()).slice(-2);
-    var mm = String(now.getMonth() + 1).padStart(2, '0');
-    var prefix = 'XAD-' + yy + mm + '-';
+    var s = (source || 'X').charAt(0).toUpperCase();
+    var m = (medium || 'X').charAt(0).toUpperCase();
+    // dateStr: "2026-03-01" → "260301"
+    var yymmdd = dateStr.replace(/-/g, '').substring(2);
+    var prefix = s + m + '-' + yymmdd + '-';
 
     var lastRow = sheet.getLastRow();
     var maxSeq = 0;
@@ -57,7 +58,7 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
 
     // 管理IDを生成
-    var managementId = generateManagementId(sheet);
+    var managementId = generateManagementId(sheet, data.source, data.medium, data.date);
 
     // 受信URLにutm_idを付加
     var finalUrl = data.urlWithoutId;
