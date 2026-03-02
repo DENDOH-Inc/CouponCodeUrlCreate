@@ -144,10 +144,43 @@ function doGet(e) {
     }
   }
 
+  if (action === 'targets') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('ターゲット区分マスター');
+      if (!masterSheet) {
+        return ContentService
+          .createTextOutput(JSON.stringify({ error: 'ターゲット区分マスターシートが見つかりません' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var targets = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1] || data[i][2]) {
+            targets.push({
+              id: data[i][0],
+              target_name: data[i][1],
+              utm_term: data[i][2]
+            });
+          }
+        }
+      }
+      return ContentService
+        .createTextOutput(JSON.stringify(targets))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({
       status: 'ok',
-      message: 'This endpoint accepts POST requests. Use ?action=campaigns to get campaign master.'
+      message: 'Use ?action=campaigns or ?action=targets to get master data.'
     }))
     .setMimeType(ContentService.MimeType.JSON);
 }

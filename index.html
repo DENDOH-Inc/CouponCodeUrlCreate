@@ -52,21 +52,24 @@
                 </fieldset>
 
                 <fieldset class="translation-pair">
-                    <legend>ターゲット区分</legend>
+                    <legend>ターゲット区分
+                        <a href="https://docs.google.com/spreadsheets/d/1pmg8S3FafjsGXbr4gVJFgbfqnRYl3hVCfVDyAT_-A98/edit?gid=1413177925#gid=1413177925" target="_blank" rel="noopener noreferrer" class="inline-link">（マスター編集）</a>
+                    </legend>
                     <div class="pair-fields">
                         <div class="form-group">
-                            <label for="targetSegmentJa">ターゲット区分（日本語）</label>
-                            <input
-                                type="text"
+                            <label for="targetSegmentJa">ターゲット区分 *</label>
+                            <select
                                 id="targetSegmentJa"
                                 name="targetSegmentJa"
-                                placeholder="新規ユーザー"
+                                required
                             >
+                                <option value="">ターゲットを選択してください</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="utmTerm">utm_term</label>
-                            <div id="utmTerm" class="utm-output">自動翻訳されます</div>
-                            <small class="auto-translated">各単語の頭文字で略語に変換されます（必ず2文字以上。例: 新規ユーザー → nu）</small>
+                            <div id="utmTerm" class="utm-output">ターゲットを選択すると表示されます</div>
+                            <small class="auto-translated"><a href="https://docs.google.com/spreadsheets/d/1pmg8S3FafjsGXbr4gVJFgbfqnRYl3hVCfVDyAT_-A98/edit?gid=1413177925#gid=1413177925" target="_blank" rel="noopener noreferrer" class="inline-link">マスター</a>のutm_term値がそのまま使用されます</small>
                         </div>
                     </div>
                 </fieldset>

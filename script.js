@@ -14,7 +14,7 @@ const saveWebAppUrlBtn = document.getElementById('saveWebAppUrl');
 // 翻訳ペアのフィールド
 const campaignGroupJaSelect = document.getElementById('campaignGroupJa');
 const utmCampaignDisplay = document.getElementById('utmCampaign');
-const targetSegmentJaInput = document.getElementById('targetSegmentJa');
+const targetSegmentJaSelect = document.getElementById('targetSegmentJa');
 const utmTermDisplay = document.getElementById('utmTerm');
 const creativeNameJaInput = document.getElementById('creativeNameJa');
 const utmContentDisplay = document.getElementById('utmContent');
@@ -29,10 +29,13 @@ campaignGroupJaSelect.addEventListener('change', () => {
     }
 });
 
-targetSegmentJaInput.addEventListener('blur', async () => {
-    if (targetSegmentJaInput.value.trim()) {
-        const initials = await translateToInitials(targetSegmentJaInput.value.trim());
-        utmTermDisplay.textContent = initials;
+// ターゲット区分選択時 → utm_term表示を更新
+targetSegmentJaSelect.addEventListener('change', () => {
+    const val = targetSegmentJaSelect.value;
+    if (val) {
+        utmTermDisplay.textContent = val;
+    } else {
+        utmTermDisplay.textContent = 'ターゲットを選択すると表示されます';
     }
 });
 
@@ -93,6 +96,46 @@ async function loadCampaignMaster() {
 }
 loadCampaignMaster();
 
+// ターゲット区分マスター取得
+async function loadTargetMaster() {
+    if (!webAppUrl) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'マスター未取得（GAS設定が必要です）';
+        opt.disabled = true;
+        targetSegmentJaSelect.appendChild(opt);
+        return;
+    }
+    try {
+        const response = await fetch(webAppUrl + '?action=targets');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const targets = await response.json();
+        if (targets.error) throw new Error(targets.error);
+        if (!Array.isArray(targets) || targets.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'ターゲット区分マスターにデータがありません';
+            opt.disabled = true;
+            targetSegmentJaSelect.appendChild(opt);
+            return;
+        }
+        targets.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.utm_term;
+            opt.textContent = t.target_name;
+            targetSegmentJaSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.warn('ターゲット区分マスター取得エラー:', err);
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'マスター取得失敗（GAS設定を確認してください）';
+        opt.disabled = true;
+        targetSegmentJaSelect.appendChild(opt);
+    }
+}
+loadTargetMaster();
+
 // Web App URL保存
 saveWebAppUrlBtn.addEventListener('click', () => {
     const url = webAppUrlInput.value.trim();
@@ -100,21 +143,21 @@ saveWebAppUrlBtn.addEventListener('click', () => {
         localStorage.setItem(STORAGE_KEY, url);
         webAppUrl = url;
         showMessage('Web App URLを保存しました', 'success');
-        // キャンペーンマスターを再取得
+        // マスターを再取得
         campaignGroupJaSelect.innerHTML = '<option value="">キャンペーンを選択してください</option>';
         utmCampaignDisplay.textContent = 'キャンペーンを選択すると表示されます';
         loadCampaignMaster();
+        targetSegmentJaSelect.innerHTML = '<option value="">ターゲットを選択してください</option>';
+        utmTermDisplay.textContent = 'ターゲットを選択すると表示されます';
+        loadTargetMaster();
     } else {
         localStorage.removeItem(STORAGE_KEY);
         webAppUrl = '';
         showMessage('Web App URLを削除しました', 'success');
         campaignGroupJaSelect.innerHTML = '<option value="">キャンペーンを選択してください</option>';
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = 'マスター未取得（GAS設定が必要です）';
-        opt.disabled = true;
-        campaignGroupJaSelect.appendChild(opt);
         utmCampaignDisplay.textContent = 'キャンペーンを選択すると表示されます';
+        targetSegmentJaSelect.innerHTML = '<option value="">ターゲットを選択してください</option>';
+        utmTermDisplay.textContent = 'ターゲットを選択すると表示されます';
     }
 });
 
@@ -206,9 +249,36 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
   }
+  if (action === 'targets') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('ターゲット区分マスター');
+      if (!masterSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: 'ターゲット区分マスターシートが見つかりません'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var targets = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1] || data[i][2]) {
+            targets.push({ id: data[i][0], target_name: data[i][1], utm_term: data[i][2] });
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify(targets))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: error.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
-    message: 'Use ?action=campaigns to get campaign master.'
+    message: 'Use ?action=campaigns or ?action=targets to get master data.'
   })).setMimeType(ContentService.MimeType.JSON);
 }`;
 
@@ -240,10 +310,9 @@ urlForm.addEventListener('submit', async (e) => {
 
     // キャンペーングループ: selectのvalueがutm_campaign値
     let utmCampaignVal = campaignGroupJaSelect.value;
-    let utmTermVal = utmTermDisplay.textContent.trim();
+    let utmTermVal = targetSegmentJaSelect.value;
     let utmContentVal = utmContentDisplay.textContent.trim();
     // プレースホルダーテキストをクリア
-    if (utmTermVal === '自動翻訳されます') utmTermVal = '';
     if (utmContentVal === '自動翻訳されます') utmContentVal = '';
 
     // ローディング表示
@@ -251,11 +320,6 @@ urlForm.addEventListener('submit', async (e) => {
     generateBtn.disabled = true;
 
     try {
-        // 翻訳値が未取得なら翻訳を実行
-        if (!utmTermVal && targetSegmentJaInput.value.trim()) {
-            utmTermVal = await translateToInitials(targetSegmentJaInput.value.trim());
-            utmTermDisplay.textContent = utmTermVal;
-        }
         if (!utmContentVal && creativeNameJaInput.value.trim()) {
             utmContentVal = await translateWithMyMemory(creativeNameJaInput.value.trim());
             utmContentDisplay.textContent = utmContentVal;
@@ -288,7 +352,7 @@ urlForm.addEventListener('submit', async (e) => {
                 date: formData.campaignDate,
                 campaignGroupJa: campaignGroupJaSelect.selectedOptions[0].textContent,
                 utmCampaign: fullUtmCampaign,
-                targetSegmentJa: targetSegmentJaInput.value.trim(),
+                targetSegmentJa: targetSegmentJaSelect.selectedOptions[0].textContent,
                 utmTerm: formData.utmTerm,
                 creativeNameJa: creativeNameJaInput.value.trim(),
                 utmContent: formData.utmContent,
