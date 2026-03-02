@@ -409,12 +409,13 @@ async function translateToInitials(text) {
     }
 }
 
-// URLに適した形式に変換
+// URLに適した形式に変換（小文字、アンダースコア区切り）
 function sanitizeForURL(text) {
     return text
         .replace(/[^a-zA-Z0-9\-_\s]/g, '')
-        .replace(/\s+/g, '')
-        .replace(/^[-_]+|[-_]+$/g, '');
+        .replace(/\s+/g, '_')
+        .replace(/^[-_]+|[-_]+$/g, '')
+        .toLowerCase();
 }
 
 // URL生成関数（utm_idなし）
