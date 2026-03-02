@@ -302,9 +302,10 @@ async function translateToInitials(text) {
         const data = await response.json();
         if (data.responseStatus === 200 && data.responseData) {
             const translated = data.responseData.translatedText;
-            // スペース区切りで各単語の頭文字を取得（数字も頭文字としてカウント）
+            // スペース区切り＋キャメルケースも分割して頭文字を取得
             const words = translated
                 .split(/\s+/)
+                .flatMap(w => w.split(/(?=[A-Z])/))
                 .filter(w => /[a-zA-Z0-9]/.test(w));
             let initials = words
                 .map(w => w.match(/[a-zA-Z0-9]/)[0])
