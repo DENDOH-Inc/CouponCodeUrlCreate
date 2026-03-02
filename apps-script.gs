@@ -106,12 +106,47 @@ function doPost(e) {
   }
 }
 
-// OPTIONSリクエスト（プリフライト）への対応
+// GETリクエスト対応（キャンペーンマスター取得 / ステータス確認）
 function doGet(e) {
+  var action = e && e.parameter && e.parameter.action;
+
+  if (action === 'campaigns') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('キャンペーンマスター');
+      if (!masterSheet) {
+        return ContentService
+          .createTextOutput(JSON.stringify({ error: 'キャンペーンマスターシートが見つかりません' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var campaigns = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1] || data[i][2]) {
+            campaigns.push({
+              id: data[i][0],
+              campaign_name: data[i][1],
+              utm_campaign: data[i][2]
+            });
+          }
+        }
+      }
+      return ContentService
+        .createTextOutput(JSON.stringify(campaigns))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({
       status: 'ok',
-      message: 'This endpoint accepts POST requests only'
+      message: 'This endpoint accepts POST requests. Use ?action=campaigns to get campaign master.'
     }))
     .setMimeType(ContentService.MimeType.JSON);
 }

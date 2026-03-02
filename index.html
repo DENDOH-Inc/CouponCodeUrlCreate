@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>クーポンコード付きURL生成ツール</title>
-    <link rel="stylesheet" href="style.css?v=20260302">
+    <link rel="stylesheet" href="style.css?v=20260302b">
 </head>
 <body>
     <div class="container">
@@ -32,18 +32,18 @@
                     <legend>キャンペーングループ</legend>
                     <div class="pair-fields">
                         <div class="form-group">
-                            <label for="campaignGroupJa">キャンペーングループ（日本語） *</label>
-                            <input
-                                type="text"
+                            <label for="campaignGroupJa">キャンペーングループ *</label>
+                            <select
                                 id="campaignGroupJa"
                                 name="campaignGroupJa"
-                                placeholder="30周年イベント"
                                 required
                             >
+                                <option value="">キャンペーンを選択してください</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="utmCampaign">utm_campaign</label>
-                            <div id="utmCampaign" class="utm-output">自動翻訳されます</div>
+                            <div id="utmCampaign" class="utm-output">キャンペーンを選択すると表示されます</div>
                             <small class="auto-translated">YYYYMM_ が自動付与されます（例: 202603_30thanniversary）</small>
                         </div>
                     </div>
@@ -209,6 +209,6 @@
         </footer>
     </div>
 
-    <script src="script.js?v=20260302"></script>
+    <script src="script.js?v=20260302b"></script>
 </body>
 </html>

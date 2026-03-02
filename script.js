@@ -12,18 +12,20 @@ const webAppUrlInput = document.getElementById('webAppUrl');
 const saveWebAppUrlBtn = document.getElementById('saveWebAppUrl');
 
 // 翻訳ペアのフィールド
-const campaignGroupJaInput = document.getElementById('campaignGroupJa');
+const campaignGroupJaSelect = document.getElementById('campaignGroupJa');
 const utmCampaignDisplay = document.getElementById('utmCampaign');
 const targetSegmentJaInput = document.getElementById('targetSegmentJa');
 const utmTermDisplay = document.getElementById('utmTerm');
 const creativeNameJaInput = document.getElementById('creativeNameJa');
 const utmContentDisplay = document.getElementById('utmContent');
 
-// 日本語フィールドのblurイベントで自動翻訳 → 表示を更新
-campaignGroupJaInput.addEventListener('blur', async () => {
-    if (campaignGroupJaInput.value.trim()) {
-        const translated = await translateWithMyMemory(campaignGroupJaInput.value.trim());
-        utmCampaignDisplay.textContent = translated;
+// キャンペーングループ選択時 → utm_campaign表示を更新
+campaignGroupJaSelect.addEventListener('change', () => {
+    const val = campaignGroupJaSelect.value;
+    if (val) {
+        utmCampaignDisplay.textContent = val;
+    } else {
+        utmCampaignDisplay.textContent = 'キャンペーンを選択すると表示されます';
     }
 });
 
@@ -51,6 +53,46 @@ if (webAppUrl) {
 // 今日の日付をデフォルトとして設定
 document.getElementById('campaignDate').valueAsDate = new Date();
 
+// キャンペーンマスター取得
+async function loadCampaignMaster() {
+    if (!webAppUrl) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'マスター未取得（GAS設定が必要です）';
+        opt.disabled = true;
+        campaignGroupJaSelect.appendChild(opt);
+        return;
+    }
+    try {
+        const response = await fetch(webAppUrl + '?action=campaigns');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const campaigns = await response.json();
+        if (campaigns.error) throw new Error(campaigns.error);
+        if (!Array.isArray(campaigns) || campaigns.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'キャンペーンマスターにデータがありません';
+            opt.disabled = true;
+            campaignGroupJaSelect.appendChild(opt);
+            return;
+        }
+        campaigns.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.utm_campaign;
+            opt.textContent = c.campaign_name;
+            campaignGroupJaSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.warn('キャンペーンマスター取得エラー:', err);
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'マスター取得失敗（GAS設定を確認してください）';
+        opt.disabled = true;
+        campaignGroupJaSelect.appendChild(opt);
+    }
+}
+loadCampaignMaster();
+
 // Web App URL保存
 saveWebAppUrlBtn.addEventListener('click', () => {
     const url = webAppUrlInput.value.trim();
@@ -58,10 +100,21 @@ saveWebAppUrlBtn.addEventListener('click', () => {
         localStorage.setItem(STORAGE_KEY, url);
         webAppUrl = url;
         showMessage('Web App URLを保存しました', 'success');
+        // キャンペーンマスターを再取得
+        campaignGroupJaSelect.innerHTML = '<option value="">キャンペーンを選択してください</option>';
+        utmCampaignDisplay.textContent = 'キャンペーンを選択すると表示されます';
+        loadCampaignMaster();
     } else {
         localStorage.removeItem(STORAGE_KEY);
         webAppUrl = '';
         showMessage('Web App URLを削除しました', 'success');
+        campaignGroupJaSelect.innerHTML = '<option value="">キャンペーンを選択してください</option>';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'マスター未取得（GAS設定が必要です）';
+        opt.disabled = true;
+        campaignGroupJaSelect.appendChild(opt);
+        utmCampaignDisplay.textContent = 'キャンペーンを選択すると表示されます';
     }
 });
 
@@ -121,6 +174,41 @@ function doPost(e) {
       success: false, message: error.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function doGet(e) {
+  var action = e && e.parameter && e.parameter.action;
+  if (action === 'campaigns') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('キャンペーンマスター');
+      if (!masterSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: 'キャンペーンマスターシートが見つかりません'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var campaigns = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1] || data[i][2]) {
+            campaigns.push({ id: data[i][0], campaign_name: data[i][1], utm_campaign: data[i][2] });
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify(campaigns))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: error.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'ok',
+    message: 'Use ?action=campaigns to get campaign master.'
+  })).setMimeType(ContentService.MimeType.JSON);
 }`;
 
     navigator.clipboard.writeText(code).then(() => {
@@ -149,12 +237,11 @@ urlForm.addEventListener('submit', async (e) => {
 
     const campaignDate = document.getElementById('campaignDate').value;
 
-    // 翻訳値の取得（blur時に自動表示済み）
-    let utmCampaignVal = utmCampaignDisplay.textContent.trim();
+    // キャンペーングループ: selectのvalueがutm_campaign値
+    let utmCampaignVal = campaignGroupJaSelect.value;
     let utmTermVal = utmTermDisplay.textContent.trim();
     let utmContentVal = utmContentDisplay.textContent.trim();
     // プレースホルダーテキストをクリア
-    if (utmCampaignVal === '自動翻訳されます') utmCampaignVal = '';
     if (utmTermVal === '自動翻訳されます') utmTermVal = '';
     if (utmContentVal === '自動翻訳されます') utmContentVal = '';
 
@@ -164,10 +251,6 @@ urlForm.addEventListener('submit', async (e) => {
 
     try {
         // 翻訳値が未取得なら翻訳を実行
-        if (!utmCampaignVal && campaignGroupJaInput.value.trim()) {
-            utmCampaignVal = await translateWithMyMemory(campaignGroupJaInput.value.trim());
-            utmCampaignDisplay.textContent = utmCampaignVal;
-        }
         if (!utmTermVal && targetSegmentJaInput.value.trim()) {
             utmTermVal = await translateToInitials(targetSegmentJaInput.value.trim());
             utmTermDisplay.textContent = utmTermVal;
@@ -204,7 +287,7 @@ urlForm.addEventListener('submit', async (e) => {
         if (webAppUrl) {
             const gasResult = await sendToSpreadsheet({
                 date: formData.campaignDate,
-                campaignGroupJa: campaignGroupJaInput.value.trim(),
+                campaignGroupJa: campaignGroupJaSelect.selectedOptions[0].textContent,
                 utmCampaign: fullUtmCampaign,
                 targetSegmentJa: targetSegmentJaInput.value.trim(),
                 utmTerm: formData.utmTerm,
