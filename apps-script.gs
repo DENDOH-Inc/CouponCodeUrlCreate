@@ -21,7 +21,8 @@ function generateManagementId(sheet, source, medium, dateStr) {
   lock.waitLock(10000);
 
   try {
-    var s = (source || 'X').charAt(0).toUpperCase();
+    var sourceMap = { 'twitter': 'X' };
+    var s = sourceMap[(source || '').toLowerCase()] || (source || 'X').charAt(0).toUpperCase();
     var m = (medium || 'X').charAt(0).toUpperCase();
     // dateStr: "2026-03-01" → "260301"
     var yymmdd = dateStr.replace(/-/g, '').substring(2);

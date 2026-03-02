@@ -124,7 +124,8 @@ function copyScriptCode() {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    var s = (source || 'X').charAt(0).toUpperCase();
+    var sourceMap = { 'twitter': 'X' };
+    var s = sourceMap[(source || '').toLowerCase()] || (source || 'X').charAt(0).toUpperCase();
     var m = (medium || 'X').charAt(0).toUpperCase();
     var yymmdd = dateStr.replace(/-/g, '').substring(2);
     var prefix = s + m + '-' + yymmdd + '-';
