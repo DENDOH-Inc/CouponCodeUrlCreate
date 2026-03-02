@@ -133,9 +133,9 @@ function testDoPost() {
         utmContent: 'gacha_gr_01',
         couponCode: 'FC39X',
         refPage: 'lottery/290',
-        source: 'twitter',
+        source: 'x',
         medium: 'cpc',
-        urlWithoutId: 'https://fortune-cookie.tokyo/lottery/290?utm_source=twitter&utm_medium=cpc&utm_campaign=202603_30thanniversaryevent&utm_term=lal&utm_content=gacha_gr_01&code=FC39X'
+        urlWithoutId: 'https://fortune-cookie.tokyo/lottery/290?utm_source=x&utm_medium=cpc&utm_campaign=202603_30thanniversaryevent&utm_term=lal&utm_content=gacha_gr_01&code=FC39X'
       })
     }
   };
