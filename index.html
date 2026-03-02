@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>クーポンコード付きURL生成ツール</title>
-    <link rel="stylesheet" href="style.css?v=20260227">
+    <link rel="stylesheet" href="style.css?v=20260302">
 </head>
 <body>
     <div class="container">
@@ -14,6 +14,8 @@
         </header>
 
         <main>
+            <div class="management-id-note">管理ID（utm_id）はスプレッドシート記録時に自動採番されます</div>
+
             <form id="urlForm">
                 <div class="form-group">
                     <label for="campaignDate">日付 *</label>
@@ -26,17 +28,81 @@
                     <small>キャンペーンの日付を選択してください</small>
                 </div>
 
-                <div class="form-group">
-                    <label for="campaignName">キャンペーン名（日本語） *</label>
-                    <input
-                        type="text"
-                        id="campaignName"
-                        name="campaignName"
-                        placeholder="リーリエ争奪戦"
-                        required
-                    >
-                    <small>自動的に英語翻訳されてURLに追加されます</small>
-                </div>
+                <fieldset class="translation-pair">
+                    <legend>キャンペーングループ</legend>
+                    <div class="pair-fields">
+                        <div class="form-group">
+                            <label for="campaignGroupJa">キャンペーングループ（日本語） *</label>
+                            <input
+                                type="text"
+                                id="campaignGroupJa"
+                                name="campaignGroupJa"
+                                placeholder="30周年イベント"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="utmCampaign">utm_campaign</label>
+                            <input
+                                type="text"
+                                id="utmCampaign"
+                                name="utmCampaign"
+                                placeholder="自動翻訳されます（手動編集も可）"
+                            >
+                            <small class="auto-translated">YYYYMM_ が自動付与されます（例: 202603_30thanniversary）</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="translation-pair">
+                    <legend>ターゲット区分</legend>
+                    <div class="pair-fields">
+                        <div class="form-group">
+                            <label for="targetSegmentJa">ターゲット区分（日本語） *</label>
+                            <input
+                                type="text"
+                                id="targetSegmentJa"
+                                name="targetSegmentJa"
+                                placeholder="類似配信"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="utmTerm">utm_term</label>
+                            <input
+                                type="text"
+                                id="utmTerm"
+                                name="utmTerm"
+                                placeholder="lal 等の略語推奨"
+                            >
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="translation-pair">
+                    <legend>試作名</legend>
+                    <div class="pair-fields">
+                        <div class="form-group">
+                            <label for="creativeNameJa">試作名（日本語） *</label>
+                            <input
+                                type="text"
+                                id="creativeNameJa"
+                                name="creativeNameJa"
+                                placeholder="30thはじまりのガチャ緑"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="utmContent">utm_content</label>
+                            <input
+                                type="text"
+                                id="utmContent"
+                                name="utmContent"
+                                placeholder="gacha_gr_01 等"
+                            >
+                        </div>
+                    </div>
+                </fieldset>
 
                 <div class="form-group">
                     <label for="couponCode">クーポンコード</label>
@@ -94,13 +160,14 @@
 
             <div id="result" class="result hidden">
                 <h2>生成されたURL</h2>
+                <div id="managementIdDisplay" class="management-id-info hidden"></div>
                 <div class="url-display">
                     <input type="text" id="generatedUrl" readonly>
                     <button type="button" class="copy-btn" id="copyBtn">
                         コピー
                     </button>
                 </div>
-                <div id="translatedCampaign" class="translated-info"></div>
+                <div id="utmDetails" class="translated-info"></div>
                 <div id="spreadsheetStatus" class="spreadsheet-status"></div>
             </div>
 
@@ -143,7 +210,7 @@
                         <summary>スプレッドシート連携の設定手順</summary>
                         <ol class="setup-steps">
                             <li>Googleスプレッドシートを新規作成</li>
-                            <li>1行目に見出しを設定：<code>日付 | キャンペーン名 | utm_campaign | クーポンコード | 参照ページ | 参照先 | メディア | URL</code></li>
+                            <li>1行目に見出しを設定：<code>管理ID | 日付 | キャンペーングループ(日本語) | utm_campaign | ターゲット区分(日本語) | utm_term | 試作名(日本語) | utm_content | クーポンコード | 参照ページ | 参照先 | メディア | 生成URL</code></li>
                             <li>「拡張機能」→「Apps Script」を開く</li>
                             <li>以下のコードを貼り付けて保存
                                 <button type="button" class="copy-code-btn" onclick="copyScriptCode()">コードをコピー</button>
@@ -158,6 +225,6 @@
         </footer>
     </div>
 
-    <script src="script.js?v=20260227"></script>
+    <script src="script.js?v=20260302"></script>
 </body>
 </html>
