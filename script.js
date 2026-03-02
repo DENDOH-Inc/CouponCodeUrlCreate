@@ -8,7 +8,6 @@ const generatedUrl = document.getElementById('generatedUrl');
 const copyBtn = document.getElementById('copyBtn');
 const utmDetails = document.getElementById('utmDetails');
 const spreadsheetStatus = document.getElementById('spreadsheetStatus');
-const managementIdDisplay = document.getElementById('managementIdDisplay');
 const webAppUrlInput = document.getElementById('webAppUrl');
 const saveWebAppUrlBtn = document.getElementById('saveWebAppUrl');
 
@@ -141,7 +140,6 @@ urlForm.addEventListener('submit', async (e) => {
     // エラー表示をクリア
     hideError();
     result.classList.add('hidden');
-    managementIdDisplay.classList.add('hidden');
 
     // フォームデータの取得
     const refPageInput = document.getElementById('refPage').value.trim();
@@ -198,14 +196,9 @@ urlForm.addEventListener('submit', async (e) => {
         const yyyymm = formData.campaignDate.replace(/-/g, '').substring(0, 6);
         const fullUtmCampaign = `${yyyymm}_${formData.utmCampaign}`;
 
-        // 結果を表示（暫定）
+        // 結果を表示（暫定 - utm_idなし）
         generatedUrl.value = urlWithoutId;
-        utmDetails.innerHTML = `
-            <strong>utm_campaign:</strong> ${fullUtmCampaign}<br>
-            <strong>utm_term:</strong> ${formData.utmTerm || '(未設定)'}<br>
-            <strong>utm_content:</strong> ${formData.utmContent || '(未設定)'}
-        `;
-        result.classList.remove('hidden');
+        let managementId = '';
 
         // Phase 2: GASに送信
         if (webAppUrl) {
@@ -224,18 +217,27 @@ urlForm.addEventListener('submit', async (e) => {
                 urlWithoutId: urlWithoutId
             });
 
-            // GASからの結果で表示を更新
-            if (gasResult && gasResult.managementId) {
-                managementIdDisplay.textContent = `管理ID: ${gasResult.managementId}`;
-                managementIdDisplay.classList.remove('hidden');
-            }
             if (gasResult && gasResult.url) {
                 generatedUrl.value = gasResult.url;
+            }
+            if (gasResult && gasResult.managementId) {
+                managementId = gasResult.managementId;
             }
         } else {
             spreadsheetStatus.textContent = '⚠️ GAS未設定のため、utm_idなしのURLです。スプレッドシート連携を設定すると管理IDが自動採番されます。';
             spreadsheetStatus.className = 'spreadsheet-status warning';
         }
+
+        // 詳細表示
+        utmDetails.innerHTML = `
+            <strong>utm_source:</strong> ${formData.utmSource}<br>
+            <strong>utm_medium:</strong> ${formData.utmMedium}<br>
+            <strong>utm_campaign:</strong> ${fullUtmCampaign}<br>
+            <strong>utm_term:</strong> ${formData.utmTerm || '(未設定)'}<br>
+            <strong>utm_content:</strong> ${formData.utmContent || '(未設定)'}<br>
+            <strong>utm_id:</strong> ${managementId || '(GAS連携時に自動採番)'}
+        `;
+        result.classList.remove('hidden');
 
     } catch (err) {
         showError('URLの生成中にエラーが発生しました: ' + err.message);
