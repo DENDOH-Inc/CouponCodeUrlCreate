@@ -177,10 +177,42 @@ function doGet(e) {
     }
   }
 
+  if (action === 'coupons') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('クーポンコードマスター');
+      if (!masterSheet) {
+        return ContentService
+          .createTextOutput(JSON.stringify({ error: 'クーポンコードマスターシートが見つかりません' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var coupons = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1]) {
+            coupons.push({
+              id: data[i][0],
+              coupon_code: data[i][1]
+            });
+          }
+        }
+      }
+      return ContentService
+        .createTextOutput(JSON.stringify(coupons))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({
       status: 'ok',
-      message: 'Use ?action=campaigns or ?action=targets to get master data.'
+      message: 'Use ?action=campaigns, ?action=targets, or ?action=coupons to get master data.'
     }))
     .setMimeType(ContentService.MimeType.JSON);
 }

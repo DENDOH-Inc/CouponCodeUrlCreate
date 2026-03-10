@@ -136,6 +136,28 @@ async function loadTargetMaster() {
 }
 loadTargetMaster();
 
+// クーポンコードマスター取得
+const couponCodeSelect = document.getElementById('couponCode');
+async function loadCouponMaster() {
+    if (!webAppUrl) return;
+    try {
+        const response = await fetch(webAppUrl + '?action=coupons');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const coupons = await response.json();
+        if (coupons.error) throw new Error(coupons.error);
+        if (!Array.isArray(coupons) || coupons.length === 0) return;
+        coupons.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.coupon_code;
+            opt.textContent = c.coupon_code;
+            couponCodeSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.warn('クーポンコードマスター取得エラー:', err);
+    }
+}
+loadCouponMaster();
+
 // Web App URL保存
 saveWebAppUrlBtn.addEventListener('click', () => {
     const url = webAppUrlInput.value.trim();
@@ -150,6 +172,8 @@ saveWebAppUrlBtn.addEventListener('click', () => {
         targetSegmentJaSelect.innerHTML = '<option value="">ターゲットを選択してください</option>';
         utmTermDisplay.textContent = 'ターゲットを選択すると表示されます';
         loadTargetMaster();
+        couponCodeSelect.innerHTML = '<option value="">なし</option>';
+        loadCouponMaster();
     } else {
         localStorage.removeItem(STORAGE_KEY);
         webAppUrl = '';
@@ -158,6 +182,7 @@ saveWebAppUrlBtn.addEventListener('click', () => {
         utmCampaignDisplay.textContent = 'キャンペーンを選択すると表示されます';
         targetSegmentJaSelect.innerHTML = '<option value="">ターゲットを選択してください</option>';
         utmTermDisplay.textContent = 'ターゲットを選択すると表示されます';
+        couponCodeSelect.innerHTML = '<option value="">なし</option>';
     }
 });
 
@@ -276,9 +301,36 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
   }
+  if (action === 'coupons') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('クーポンコードマスター');
+      if (!masterSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: 'クーポンコードマスターシートが見つかりません'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var coupons = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1]) {
+            coupons.push({ id: data[i][0], coupon_code: data[i][1] });
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify(coupons))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: error.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
-    message: 'Use ?action=campaigns or ?action=targets to get master data.'
+    message: 'Use ?action=campaigns, ?action=targets, or ?action=coupons.'
   })).setMimeType(ContentService.MimeType.JSON);
 }`;
 
