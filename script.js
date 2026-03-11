@@ -136,6 +136,50 @@ async function loadTargetMaster() {
 }
 loadTargetMaster();
 
+// 参照先マスター取得
+const utmSourceSelect = document.getElementById('utmSource');
+async function loadSourceMaster() {
+    if (!webAppUrl) return;
+    try {
+        const response = await fetch(webAppUrl + '?action=sources');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const sources = await response.json();
+        if (sources.error) throw new Error(sources.error);
+        if (!Array.isArray(sources) || sources.length === 0) return;
+        sources.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.utm_source;
+            opt.textContent = s.source_name;
+            utmSourceSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.warn('参照先マスター取得エラー:', err);
+    }
+}
+loadSourceMaster();
+
+// メディアマスター取得
+const utmMediumSelect = document.getElementById('utmMedium');
+async function loadMediumMaster() {
+    if (!webAppUrl) return;
+    try {
+        const response = await fetch(webAppUrl + '?action=mediums');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const mediums = await response.json();
+        if (mediums.error) throw new Error(mediums.error);
+        if (!Array.isArray(mediums) || mediums.length === 0) return;
+        mediums.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.utm_medium;
+            opt.textContent = m.medium_name;
+            utmMediumSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.warn('メディアマスター取得エラー:', err);
+    }
+}
+loadMediumMaster();
+
 // クーポンコードマスター取得
 const couponCodeSelect = document.getElementById('couponCode');
 async function loadCouponMaster() {
@@ -174,6 +218,10 @@ saveWebAppUrlBtn.addEventListener('click', () => {
         loadTargetMaster();
         couponCodeSelect.innerHTML = '<option value="">なし</option>';
         loadCouponMaster();
+        utmSourceSelect.innerHTML = '<option value="">選択してください</option>';
+        loadSourceMaster();
+        utmMediumSelect.innerHTML = '<option value="">選択してください</option>';
+        loadMediumMaster();
     } else {
         localStorage.removeItem(STORAGE_KEY);
         webAppUrl = '';
@@ -183,6 +231,8 @@ saveWebAppUrlBtn.addEventListener('click', () => {
         targetSegmentJaSelect.innerHTML = '<option value="">ターゲットを選択してください</option>';
         utmTermDisplay.textContent = 'ターゲットを選択すると表示されます';
         couponCodeSelect.innerHTML = '<option value="">なし</option>';
+        utmSourceSelect.innerHTML = '<option value="">選択してください</option>';
+        utmMediumSelect.innerHTML = '<option value="">選択してください</option>';
     }
 });
 
@@ -328,9 +378,63 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
   }
+  if (action === 'sources') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('表_1');
+      if (!masterSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: '参照先マスターシート（表_1）が見つかりません'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var sources = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1] || data[i][2]) {
+            sources.push({ id: data[i][0], source_name: data[i][1], utm_source: data[i][2] });
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify(sources))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: error.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  if (action === 'mediums') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var masterSheet = ss.getSheetByName('メディア一覧');
+      if (!masterSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: 'メディアマスターシート（メディア一覧）が見つかりません'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      var lastRow = masterSheet.getLastRow();
+      var mediums = [];
+      if (lastRow >= 2) {
+        var data = masterSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+        for (var i = 0; i < data.length; i++) {
+          if (data[i][0] || data[i][1] || data[i][2]) {
+            mediums.push({ id: data[i][0], medium_name: data[i][1], utm_medium: data[i][2] });
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify(mediums))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: error.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
-    message: 'Use ?action=campaigns, ?action=targets, or ?action=coupons.'
+    message: 'Use ?action=campaigns, ?action=targets, ?action=coupons, ?action=sources, or ?action=mediums.'
   })).setMimeType(ContentService.MimeType.JSON);
 }`;
 
