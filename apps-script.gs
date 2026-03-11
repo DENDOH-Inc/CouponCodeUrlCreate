@@ -3,7 +3,7 @@
  *
  * 設定手順:
  * 1. Googleスプレッドシートを新規作成
- * 2. 1行目に見出しを設定: 管理ID | 日付 | キャンペーングループ(日本語) | utm_campaign | ターゲット区分(日本語) | utm_term | 試作名(日本語) | utm_content | クーポンコード | 参照ページ | 参照先 | メディア | 生成URL
+ * 2. 1行目に見出しを設定: 管理ID | 日付 | キャンペーングループ | utm_campaign | ターゲット区分 | utm_term | 広告名 | utm_content | クーポンコード | 参照ページ | 参照先 | utm_source | メディア | utm_medium | 生成URL
  * 3. 「拡張機能」→「Apps Script」を開く
  * 4. このコードを貼り付けて保存
  * 5. 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」を選択
@@ -69,21 +69,23 @@ function doPost(e) {
       finalUrl = finalUrl + '?utm_id=' + encodeURIComponent(managementId);
     }
 
-    // 13列でデータを追加
+    // 15列でデータを追加
     sheet.appendRow([
       managementId,              // 1. 管理ID
       data.date,                 // 2. 日付
-      data.campaignGroupJa,      // 3. キャンペーングループ(日本語)
+      data.campaignGroupJa,      // 3. キャンペーングループ
       data.utmCampaign,          // 4. utm_campaign
-      data.targetSegmentJa,      // 5. ターゲット区分(日本語)
+      data.targetSegmentJa,      // 5. ターゲット区分
       data.utmTerm,              // 6. utm_term
-      data.creativeNameJa,       // 7. 試作名(日本語)
+      data.creativeNameJa,       // 7. 広告名
       data.utmContent,           // 8. utm_content
       data.couponCode,           // 9. クーポンコード
       data.refPage || '',        // 10. 参照ページ
-      data.source,               // 11. 参照先
-      data.medium,               // 12. メディア
-      finalUrl                   // 13. 生成URL
+      data.sourceName,           // 11. 参照先
+      data.source,               // 12. utm_source
+      data.mediumName,           // 13. メディア
+      data.medium,               // 14. utm_medium
+      finalUrl                   // 15. 生成URL
     ]);
 
     return ContentService

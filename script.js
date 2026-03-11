@@ -282,7 +282,8 @@ function doPost(e) {
       data.targetSegmentJa, data.utmTerm,
       data.creativeNameJa, data.utmContent,
       data.couponCode, data.refPage || '',
-      data.source, data.medium, finalUrl
+      data.sourceName, data.source,
+      data.mediumName, data.medium, finalUrl
     ]);
     return ContentService.createTextOutput(JSON.stringify({
       success: true, message: 'データを追加しました',
@@ -514,7 +515,9 @@ urlForm.addEventListener('submit', async (e) => {
                 utmContent: formData.utmContent,
                 couponCode: formData.couponCode,
                 refPage: formData.refPage,
+                sourceName: utmSourceSelect.selectedOptions[0].textContent,
                 source: formData.utmSource,
+                mediumName: utmMediumSelect.selectedOptions[0].textContent,
                 medium: formData.utmMedium,
                 urlWithoutId: urlWithoutId
             });
