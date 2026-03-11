@@ -55,7 +55,7 @@ function doPost(e) {
   try {
     Logger.log('Received request: ' + JSON.stringify(e));
 
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('クーポン付きURL管理テーブル');
     var data = JSON.parse(e.postData.contents);
 
     // 管理IDを生成

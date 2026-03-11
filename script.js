@@ -267,7 +267,7 @@ function copyScriptCode() {
 
 function doPost(e) {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('クーポン付きURL管理テーブル');
     var data = JSON.parse(e.postData.contents);
     var managementId = generateManagementId(sheet, data.source, data.medium, data.date);
     var finalUrl = data.urlWithoutId;
