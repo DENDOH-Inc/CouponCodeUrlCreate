@@ -381,10 +381,10 @@ function doGet(e) {
   if (action === 'sources') {
     try {
       var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var masterSheet = ss.getSheetByName('表_1');
+      var masterSheet = ss.getSheetByName('参照先マスター');
       if (!masterSheet) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: '参照先マスターシート（表_1）が見つかりません'
+          error: '参照先マスターシートが見つかりません'
         })).setMimeType(ContentService.MimeType.JSON);
       }
       var lastRow = masterSheet.getLastRow();
@@ -408,10 +408,10 @@ function doGet(e) {
   if (action === 'mediums') {
     try {
       var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var masterSheet = ss.getSheetByName('メディア一覧');
+      var masterSheet = ss.getSheetByName('メディアマスター');
       if (!masterSheet) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: 'メディアマスターシート（メディア一覧）が見つかりません'
+          error: 'メディアマスターシートが見つかりません'
         })).setMimeType(ContentService.MimeType.JSON);
       }
       var lastRow = masterSheet.getLastRow();
